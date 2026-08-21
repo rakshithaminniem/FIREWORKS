@@ -1,16 +1,17 @@
-# 🎆 Fireworks
 
-An interactive web experience where you control fireworks using your hand!
-
-
+# 🎆Fireworks
 
 ![Hand Fireworks](Screenshot%202026-08-21%20at%2012.28.02.png)
 
-## ✨ What is this?
+## 🎇 What is this?
 
-Hand Fireworks uses your device's camera and AI-powered hand tracking to let you interact with fireworks in real time.
+I was bored.
 
-Your hand becomes the controller.
+So naturally, I decided to make fireworks explode with my hand. 😭🎆
+
+This is a small, fun experiment I built using JavaScript, Canvas, and AI-powered hand tracking. It uses the camera to detect my hand and lets me control fireworks in real time.
+
+Basically:
 
 ### 🎮 Controls
 
@@ -20,55 +21,59 @@ Your hand becomes the controller.
 | 🖐️ Open Palm | Explode the firework |
 | 🚫 No Hand | Nothing happens |
 
-### 🔥 How it works
 
-1. Allow camera access.
-2. Make a fist.
-3. A firework appears and follows your hand.
-4. Move your fist around the screen.
-5. Open your palm.
-6. 💥 The firework explodes.
-7. ✨ Sparks fall afterward.
+No particular reason. Just wanted to make something cool. 😂
 
-## 🧠 Technology
+## 🎮 How to use it
+
+1. Open the website.
+2. Allow camera access.
+3. ✊ Make a fist to create a firework.
+4. Move your fist around and watch the firework follow it.
+5. 🖐️ Open your palm.
+6. 💥 Watch it explode.
+7. ✨ Enjoy the falling sparks.
+
+## 🧠 Technology used
 
 - HTML
 - CSS
 - JavaScript
 - MediaPipe Hands
 - HTML Canvas
-- Web Camera API
+- Camera API
 
-## 🚀 Features
+## ✨ Features
 
-- Real-time AI hand tracking
-- Gesture-controlled fireworks
-- Interactive firework movement
-- Glowing trails
-- Firework explosions
-- Falling sparks
-- Full-screen experience
-- Live camera preview
-- Responsive design
+- 🤖 Real-time hand tracking
+- ✊ Fist-controlled fireworks
+- 🖐️ Palm-controlled explosions
+- ✨ Glowing trails
+- 💥 Firework particle explosions
+- 🌟 Falling sparks
+- 📷 Live camera preview
+- ⛶ Full-screen mode
 
+## 🌐 Try It
 
-## 🌐 Live Demo
+**[🎆 Open Hand Fireworks](https://rakshithaminniem.github.io/FIREWORKS/)**
 
-**[Try Hand Fireworks](https://rakshithaminniem.github.io/FIREWORKS/)**
+## 💭 Why did I make this?
 
-## 📸 How to use
+Honestly?
 
-Open the website and allow camera access.
+No deep reason.
+I was bored.
+Thought it would be fun.😂
+So I made it.
 
-Make a **✊ fist** to control the firework.
+Maybe I'll improve it later. Maybe I'll make something completely different.
 
-Move your hand around while keeping your fist closed.
+For now, enjoy the fireworks. 🎆
 
-Open your **🖐️ palm** to trigger the explosion.
+---
 
-An interactive web experience where you control fireworks using your hand!
+Made for fun.
+Powered by curiosity, and probably too much time on my laptop. 😭
 
-## 💡 Project
-
-This project was created as an experimental interactive AI + web project exploring computer vision, hand tracking, and creative coding.
-
+👩‍💻 Author: SAI RAKSHITHA G, 2nd year-AI & ML Undergraduate at SRIT.
