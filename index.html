@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hand Fireworks</title>
+
+<!-- MediaPipe -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+}
+
+/* =========================
+   FIREWORK CANVAS
+========================= */
+
+#fireworks {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+
+    background:
+        radial-gradient(
+            ellipse at center bottom,
+            #111a2c 0%,
+            #050711 45%,
+            #000 100%
+        );
+}
+
+/* =========================
+   START SCREEN
+========================= */
+
+#startScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #182544,
+            #05060d 60%,
+            #000
+        );
+
+    transition: opacity .7s ease;
+}
+
+#startScreen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.startContent {
+    padding: 30px;
+}
+
+.icon {
+    font-size: 70px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: clamp(48px, 10vw, 100px);
+    line-height: .85;
+    letter-spacing: 6px;
+}
+
+h1 span {
+    color: #6da6ff;
+
+    text-shadow:
+        0 0 15px #4388ff,
+        0 0 40px rgba(67,136,255,.5);
+}
+
+.startText {
+    margin-top: 25px;
+    color: rgba(255,255,255,.55);
+    font-size: 16px;
+}
+
+#startButton {
+    margin-top: 35px;
+
+    padding: 17px 36px;
+
+    border: none;
+    border-radius: 50px;
+
+    background: white;
+    color: black;
+
+    font-weight: bold;
+    letter-spacing: 2px;
+
+    cursor: pointer;
+}
+
+#startButton:hover {
+    transform: scale(1.04);
+}
+
+.instructions {
+    margin-top: 25px;
+
+    font-size: 12px;
+
+    color:
+        rgba(255,255,255,.45);
+}
+
+/* =========================
+   TOP UI
+========================= */
+
+#top {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 5;
+
+    padding: 22px;
+
+    display: flex;
+    justify-content: space-between;
+
+    pointer-events: none;
+}
+
+.logo {
+    font-size: 11px;
+    letter-spacing: 4px;
+    opacity: .5;
+}
+
+#status {
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+#fullscreen {
+    width: 42px;
+    height: 42px;
+
+    border-radius: 50%;
+
+    border:
+        1px solid
+        rgba(255,255,255,.2);
+
+    background:
+        rgba(0,0,0,.4);
+
+    color: white;
+
+    font-size: 19px;
+
+    cursor: pointer;
+
+    pointer-events: auto;
+}
+
+/* =========================
+   CAMERA
+========================= */
+
+#camera {
+    position: fixed;
+
+    right: 20px;
+    bottom: 20px;
+
+    width: 260px;
+    height: 195px;
+
+    object-fit: cover;
+
+    border-radius: 15px;
+
+    border:
+        1px solid
+        rgba(255,255,255,.25);
+
+    transform: scaleX(-1);
+
+    z-index: 6;
+
+    background: #111;
+}
+
+/* =========================
+   HAND CANVAS
+========================= */
+
+#handCanvas {
+    position: fixed;
+
+    right: 20px;
+    bottom: 20px;
+
+    width: 260px;
+    height: 195px;
+
+    z-index: 7;
+
+    transform: scaleX(-1);
+
+    pointer-events: none;
+}
+
+/* =========================
+   CONTROLS
+========================= */
+
+#controls {
+    position: fixed;
+
+    left: 20px;
+    bottom: 20px;
+
+    z-index: 5;
+
+    padding: 14px 17px;
+
+    border-radius: 13px;
+
+    background:
+        rgba(0,0,0,.45);
+
+    border:
+        1px solid
+        rgba(255,255,255,.1);
+
+    font-size: 11px;
+
+    line-height: 1.8;
+}
+
+.controlTitle {
+    font-size: 9px;
+
+    letter-spacing: 3px;
+
+    color:
+        rgba(255,255,255,.3);
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:700px) {
+
+    #camera,
+    #handCanvas {
+
+        width: 180px;
+        height: 135px;
+
+        right: 10px;
+        bottom: 10px;
+    }
+
+    #controls {
+
+        left: 10px;
+        bottom: 10px;
+    }
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     FIREWORK CANVAS
+========================= -->
+
+<canvas id="fireworks"></canvas>
+
+
+<!-- =========================
+     START SCREEN
+========================= -->
+
+<div id="startScreen">
+
+    <div class="startContent">
+
+        <div class="icon">
+            🎆
+        </div>
+
+        <h1>
+            HAND<br>
+            <span>FIREWORKS</span>
+        </h1>
+
+        <div class="startText">
+            Control the fireworks with your hand.
+        </div>
+
+        <button id="startButton">
+            START EXPERIENCE
+        </button>
+
+        <div class="instructions">
+            ✊ Fist → Launch
+            &nbsp;&nbsp;
+            🖐️ Palm → Explode
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     TOP UI
+========================= -->
+
+<div id="top">
+
+    <div>
+
+        <div class="logo">
+            HAND FIREWORKS
+        </div>
+
+        <div id="status">
+            Ready
+        </div>
+
+    </div>
+
+    <button id="fullscreen">
+        ⛶
+    </button>
+
+</div>
+
+
+<!-- =========================
+     CAMERA
+========================= -->
+
+<video
+    id="camera"
+    autoplay
+    playsinline>
+</video>
+
+
+<!-- =========================
+     HAND SKELETON
+========================= -->
+
+<canvas id="handCanvas"></canvas>
+
+
+<!-- =========================
+     CONTROLS
+========================= -->
+
+<div id="controls">
+
+    <div class="controlTitle">
+        HAND CONTROLS
+    </div>
+
+    <div>
+        ✊ Fist → Launch
+    </div>
+
+    <div>
+        🖐️ Palm → Explode
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const fireworksCanvas =
+    document.getElementById("fireworks");
+
+const ctx =
+    fireworksCanvas.getContext("2d");
+
+const video =
+    document.getElementById("camera");
+
+const handCanvas =
+    document.getElementById("handCanvas");
+
+const handCtx =
+    handCanvas.getContext("2d");
+
+const startScreen =
+    document.getElementById("startScreen");
+
+const startButton =
+    document.getElementById("startButton");
+
+const status =
+    document.getElementById("status");
+
+const fullscreenButton =
+    document.getElementById("fullscreen");
+
+
+/* =====================================================
+   SCREEN SIZE
+===================================================== */
+
+let W = window.innerWidth;
+let H = window.innerHeight;
+
+
+function resizeCanvas() {
+
+    W = window.innerWidth;
+    H = window.innerHeight;
+
+    const dpr =
+        Math.min(
+            window.devicePixelRatio || 1,
+            1.5
+        );
+
+    fireworksCanvas.width =
+        W * dpr;
+
+    fireworksCanvas.height =
+        H * dpr;
+
+    fireworksCanvas.style.width =
+        W + "px";
+
+    fireworksCanvas.style.height =
+        H + "px";
+
+    ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+    );
+}
+
+
+resizeCanvas();
+
+window.addEventListener(
+    "resize",
+    resizeCanvas
+);
+
+
+/* =====================================================
+   HAND CANVAS
+===================================================== */
+
+handCanvas.width = 260;
+handCanvas.height = 195;
+
+
+/* =====================================================
+   HAND STATE
+===================================================== */
+
+let handDetected = false;
+
+let fistDetected = false;
+
+let palmDetected = false;
+
+let previousFist = false;
+
+let previousPalm = false;
+
+
+/*
+   Hand position.
+*/
+
+let handX = W / 2;
+let handY = H / 2;
+
+
+/* =====================================================
+   FIREWORK STATE
+===================================================== */
+
+let firework = null;
+
+let particles = [];
+
+let fallingSparks = [];
+
+
+/* =====================================================
+   COLORS
+===================================================== */
+
+const colors = [
+
+    "#ffffff",
+    "#6da6ff",
+    "#4388ff",
+    "#9ec5ff",
+    "#ffd66b",
+    "#ff9966",
+    "#ff6fa8",
+    "#c48aff"
+
+];
+
+
+/* =====================================================
+   START BUTTON
+===================================================== */
+
+startButton.addEventListener(
+    "click",
+    startExperience
+);
+
+
+/* =====================================================
+   START EXPERIENCE
+===================================================== */
+
+async function startExperience() {
+
+    try {
+
+        status.textContent =
+            "Starting camera...";
+
+
+        /*
+           Ask for camera.
+        */
+
+        const stream =
+            await navigator
+                .mediaDevices
+                .getUserMedia({
+
+                    video: {
+
+                        width: 640,
+                        height: 480,
+                        facingMode: "user"
+
+                    },
+
+                    audio: false
+
+                });
+
+
+        video.srcObject =
+            stream;
+
+
+        await video.play();
+
+
+        /*
+           Hide start screen.
+        */
+
+        startScreen.classList.add(
+            "hidden"
+        );
+
+
+        status.textContent =
+            "Looking for your hand...";
+
+
+        /*
+           Start MediaPipe.
+        */
+
+        startHandTracking();
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Camera failed";
+
+        alert(
+            "Camera access was blocked. Please allow camera access and reload the page."
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   MEDIAPIPE HANDS
+===================================================== */
+
+const hands =
+    new Hands({
+
+        locateFile: function(file) {
+
+            /*
+               IMPORTANT:
+               return must be on the same line.
+            */
+
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+
+        }
+
+    });
+
+
+hands.setOptions({
+
+    maxNumHands: 1,
+
+    modelComplexity: 0,
+
+    minDetectionConfidence: 0.55,
+
+    minTrackingConfidence: 0.55
+
+});
+
+
+hands.onResults(
+    processHandResults
+);
+
+
+/* =====================================================
+   START HAND TRACKING
+===================================================== */
+
+function startHandTracking() {
+
+    const trackingCamera =
+        new Camera(
+
+            video,
+
+            {
+
+                onFrame:
+                    async function() {
+
+                        try {
+
+                            await hands.send({
+
+                                image: video
+
+                            });
+
+                        }
+
+                        catch(error) {
+
+                            console.error(
+                                "Hand tracking error:",
+                                error
+                            );
+
+                        }
+
+                    },
+
+                width: 640,
+
+                height: 480
+
+            }
+
+        );
+
+
+    trackingCamera.start();
+
+}
+
+
+/* =====================================================
+   HAND RESULTS
+===================================================== */
+
+function processHandResults(
+    results
+) {
+
+    /*
+       Clear skeleton.
+    */
+
+    handCtx.clearRect(
+        0,
+        0,
+        handCanvas.width,
+        handCanvas.height
+    );
+
+
+    /*
+       NO HAND
+    */
+
+    if (
+        !results.multiHandLandmarks ||
+        results.multiHandLandmarks.length === 0
+    ) {
+
+        handDetected = false;
+
+        fistDetected = false;
+
+        palmDetected = false;
+
+
+        /*
+           Reset gesture state.
+
+           This means a new fist
+           can trigger another firework.
+        */
+
+        previousFist = false;
+        previousPalm = false;
+
+
+        status.textContent =
+            "No hand detected";
+
+
+        return;
+
+    }
+
+
+    /*
+       HAND DETECTED
+    */
+
+    handDetected = true;
+
+
+    const landmarks =
+        results.multiHandLandmarks[0];
+
+
+    /*
+       Use index finger position
+       as the firework position.
+    */
+
+    const index =
+        landmarks[8];
+
+
+    /*
+       Mirror X because the
+       camera is mirrored.
+    */
+
+    handX =
+        (1 - index.x) * W;
+
+    handY =
+        index.y * H;
+
+
+    /*
+       Draw skeleton.
+    */
+
+    drawHand(
+        landmarks
+    );
+
+
+    /*
+       Detect gestures.
+    */
+
+    fistDetected =
+        detectFist(
+            landmarks
+        );
+
+    palmDetected =
+        detectPalm(
+            landmarks
+        );
+
+
+    /* =================================================
+       FIST
+    ================================================= */
+
+    if (fistDetected) {
+
+        status.textContent =
+            "✊ FIST — FIREWORK ACTIVE";
+
+    }
+
+
+    /* =================================================
+       PALM
+    ================================================= */
+
+    else if (palmDetected) {
+
+        status.textContent =
+            "🖐️ PALM — EXPLODE";
+
+    }
+
+
+    else {
+
+        status.textContent =
+            "Hand detected";
+
+    }
+
+
+    /* =================================================
+       FIST → CREATE FIREWORK
+    ================================================= */
+
+    if (
+        fistDetected &&
+        !previousFist
+    ) {
+
+        createFirework();
+
+    }
+
+
+    /* =================================================
+       PALM → EXPLODE
+    ================================================= */
+
+    if (
+        palmDetected &&
+        !previousPalm
+    ) {
+
+        explodeFirework();
+
+    }
+
+
+    /*
+       Remember current state.
+    */
+
+    previousFist =
+        fistDetected;
+
+    previousPalm =
+        palmDetected;
+
+}
+
+
+/* =====================================================
+   FIST DETECTION
+===================================================== */
+
+function detectFist(
+    landmarks
+) {
+
+    /*
+       Finger tips:
+       Index 8
+       Middle 12
+       Ring 16
+       Pinky 20
+
+       PIP joints:
+       Index 6
+       Middle 10
+       Ring 14
+       Pinky 18
+    */
+
+
+    const indexClosed =
+        landmarks[8].y >
+        landmarks[6].y;
+
+
+    const middleClosed =
+        landmarks[12].y >
+        landmarks[10].y;
+
+
+    const ringClosed =
+        landmarks[16].y >
+        landmarks[14].y;
+
+
+    const pinkyClosed =
+        landmarks[20].y >
+        landmarks[18].y;
+
+
+    const closedCount = [
+
+        indexClosed,
+        middleClosed,
+        ringClosed,
+        pinkyClosed
+
+    ].filter(Boolean).length;
+
+
+    return closedCount >= 3;
+
+}
+
+
+/* =====================================================
+   OPEN PALM DETECTION
+===================================================== */
+
+function detectPalm(
+    landmarks
+) {
+
+    const indexOpen =
+        landmarks[8].y <
+        landmarks[6].y;
+
+
+    const middleOpen =
+        landmarks[12].y <
+        landmarks[10].y;
+
+
+    const ringOpen =
+        landmarks[16].y <
+        landmarks[14].y;
+
+
+    const pinkyOpen =
+        landmarks[20].y <
+        landmarks[18].y;
+
+
+    const openCount = [
+
+        indexOpen,
+        middleOpen,
+        ringOpen,
+        pinkyOpen
+
+    ].filter(Boolean).length;
+
+
+    return openCount >= 4;
+
+}
+
+
+/* =====================================================
+   DRAW HAND SKELETON
+===================================================== */
+
+function drawHand(
+    landmarks
+) {
+
+    const connections = [
+
+        [0,1],
+        [1,2],
+        [2,3],
+        [3,4],
+
+        [0,5],
+        [5,6],
+        [6,7],
+        [7,8],
+
+        [0,9],
+        [9,10],
+        [10,11],
+        [11,12],
+
+        [0,13],
+        [13,14],
+        [14,15],
+        [15,16],
+
+        [0,17],
+        [17,18],
+        [18,19],
+        [19,20],
+
+        [5,9],
+        [9,13],
+        [13,17]
+
+    ];
+
+
+    /*
+       Lines.
+    */
+
+    handCtx.strokeStyle =
+        "rgba(255,255,255,.85)";
+
+    handCtx.lineWidth = 2;
+
+
+    for (
+        const pair of connections
+    ) {
+
+        const a =
+            landmarks[pair[0]];
+
+        const b =
+            landmarks[pair[1]];
+
+
+        handCtx.beginPath();
+
+
+        handCtx.moveTo(
+
+            a.x *
+            handCanvas.width,
+
+            a.y *
+            handCanvas.height
+
+        );
+
+
+        handCtx.lineTo(
+
+            b.x *
+            handCanvas.width,
+
+            b.y *
+            handCanvas.height
+
+        );
+
+
+        handCtx.stroke();
+
+    }
+
+
+    /*
+       Joints.
+    */
+
+    handCtx.fillStyle =
+        "white";
+
+
+    for (
+        const point of landmarks
+    ) {
+
+        handCtx.beginPath();
+
+
+        handCtx.arc(
+
+            point.x *
+            handCanvas.width,
+
+            point.y *
+            handCanvas.height,
+
+            3,
+
+            0,
+            Math.PI * 2
+
+        );
+
+
+        handCtx.fill();
+
+    }
+
+}
+
+
+/* =====================================================
+   CREATE FIREWORK
+===================================================== */
+
+function createFirework() {
+
+    /*
+       Only one firework at a time.
+    */
+
+    if (
+        firework !== null
+    ) {
+
+        return;
+
+    }
+
+
+    const color =
+        colors[
+            Math.floor(
+                Math.random() *
+                colors.length
+            )
+        ];
+
+
+    firework = {
+
+        x: handX,
+
+        y: handY,
+
+        color: color,
+
+        trail: []
+
+    };
+
+}
+
+
+/* =====================================================
+   UPDATE FIREWORK
+===================================================== */
+
+function updateFirework() {
+
+    if (
+        firework === null
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+       IMPORTANT:
+
+       While fist is held,
+       the firework follows
+       the hand.
+
+       It DOES NOT explode.
+    */
+
+    if (
+        fistDetected &&
+        handDetected
+    ) {
+
+        /*
+           Smooth following.
+        */
+
+        firework.x +=
+            (
+                handX -
+                firework.x
+            ) * 0.30;
+
+
+        firework.y +=
+            (
+                handY -
+                firework.y
+            ) * 0.30;
+
+
+        /*
+           Save trail.
+        */
+
+        firework.trail.push({
+
+            x: firework.x,
+
+            y: firework.y
+
+        });
+
+
+        if (
+            firework.trail.length > 25
+        ) {
+
+            firework.trail.shift();
+
+        }
+
+    }
+
+
+    /*
+       Draw.
+    */
+
+    drawFireworkTrail();
+
+    drawFirework();
+
+}
+
+
+/* =====================================================
+   DRAW FIREWORK
+===================================================== */
+
+function drawFirework() {
+
+    if (
+        firework === null
+    ) {
+
+        return;
+
+    }
+
+
+    ctx.save();
+
+
+    ctx.fillStyle =
+        firework.color;
+
+
+    ctx.shadowBlur =
+        25;
+
+
+    ctx.shadowColor =
+        firework.color;
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+
+        firework.x,
+
+        firework.y,
+
+        4,
+
+        0,
+        Math.PI * 2
+
+    );
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   DRAW FIREWORK TRAIL
+===================================================== */
+
+function drawFireworkTrail() {
+
+    if (
+        firework === null
+    ) {
+
+        return;
+
+    }
+
+
+    ctx.save();
+
+
+    ctx.lineWidth = 2;
+
+
+    ctx.lineCap =
+        "round";
+
+
+    for (
+        let i = 1;
+
+        i <
+        firework.trail.length;
+
+        i++
+    ) {
+
+        const previous =
+            firework.trail[i - 1];
+
+        const current =
+            firework.trail[i];
+
+
+        const alpha =
+            i /
+            firework.trail.length;
+
+
+        ctx.globalAlpha =
+            alpha;
+
+
+        ctx.strokeStyle =
+            firework.color;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            previous.x,
+            previous.y
+        );
+
+
+        ctx.lineTo(
+            current.x,
+            current.y
+        );
+
+
+        ctx.stroke();
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   EXPLOSION
+===================================================== */
+
+function explodeFirework() {
+
+    /*
+       Palm without a firework
+       does NOTHING.
+    */
+
+    if (
+        firework === null
+    ) {
+
+        return;
+
+    }
+
+
+    const x =
+        firework.x;
+
+    const y =
+        firework.y;
+
+    const color =
+        firework.color;
+
+
+    /*
+       Explosion particles.
+    */
+
+    for (
+        let i = 0;
+
+        i < 140;
+
+        i++
+    ) {
+
+        const angle =
+            Math.random() *
+            Math.PI *
+            2;
+
+
+        const speed =
+            1.2 +
+            Math.random() *
+            5.5;
+
+
+        particles.push({
+
+            x: x,
+
+            y: y,
+
+            vx:
+                Math.cos(angle) *
+                speed,
+
+            vy:
+                Math.sin(angle) *
+                speed,
+
+            life:
+                70 +
+                Math.random() *
+                60,
+
+            maxLife:
+                130,
+
+            size:
+                1 +
+                Math.random() *
+                1.8,
+
+            color:
+                Math.random() < .2
+                    ? "#ffffff"
+                    : color
+
+        });
+
+    }
+
+
+    /*
+       Falling sparks.
+    */
+
+    for (
+        let i = 0;
+
+        i < 40;
+
+        i++
+    ) {
+
+        fallingSparks.push({
+
+            x:
+                x +
+                (Math.random() - .5) *
+                120,
+
+            y:
+                y +
+                (Math.random() - .5) *
+                70,
+
+            vx:
+                (Math.random() - .5) *
+                .8,
+
+            vy:
+                .5 +
+                Math.random() *
+                1.5,
+
+            life:
+                100 +
+                Math.random() *
+                80,
+
+            maxLife:
+                180,
+
+            size:
+                .8 +
+                Math.random() *
+                1.3,
+
+            color:
+                color
+
+        });
+
+    }
+
+
+    /*
+       Remove firework.
+    */
+
+    firework =
+        null;
+
+}
+
+
+/* =====================================================
+   UPDATE EXPLOSION PARTICLES
+===================================================== */
+
+function updateParticles() {
+
+    for (
+        let i =
+            particles.length - 1;
+
+        i >= 0;
+
+        i--
+    ) {
+
+        const p =
+            particles[i];
+
+
+        p.x +=
+            p.vx;
+
+
+        p.y +=
+            p.vy;
+
+
+        /*
+           Gravity.
+        */
+
+        p.vy +=
+            0.025;
+
+
+        /*
+           Slight air resistance.
+        */
+
+        p.vx *=
+            0.992;
+
+        p.vy *=
+            0.992;
+
+
+        p.life--;
+
+
+        const alpha =
+            Math.max(
+
+                0,
+
+                p.life /
+                p.maxLife
+
+            );
+
+
+        ctx.globalAlpha =
+            alpha;
+
+
+        ctx.fillStyle =
+            p.color;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            p.x,
+
+            p.y,
+
+            p.size,
+
+            0,
+            Math.PI * 2
+
+        );
+
+
+        ctx.fill();
+
+
+        if (
+            p.life <= 0
+        ) {
+
+            particles.splice(
+                i,
+                1
+            );
+
+        }
+
+    }
+
+
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* =====================================================
+   UPDATE FALLING SPARKS
+===================================================== */
+
+function updateFallingSparks() {
+
+    for (
+        let i =
+            fallingSparks.length - 1;
+
+        i >= 0;
+
+        i--
+    ) {
+
+        const s =
+            fallingSparks[i];
+
+
+        s.x +=
+            s.vx;
+
+
+        s.y +=
+            s.vy;
+
+
+        /*
+           Gravity.
+        */
+
+        s.vy +=
+            0.025;
+
+
+        s.life--;
+
+
+        const alpha =
+            Math.max(
+
+                0,
+
+                s.life /
+                s.maxLife
+
+            );
+
+
+        ctx.globalAlpha =
+            alpha;
+
+
+        ctx.fillStyle =
+            s.color;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            s.x,
+
+            s.y,
+
+            s.size,
+
+            0,
+            Math.PI * 2
+
+        );
+
+
+        ctx.fill();
+
+
+        if (
+            s.life <= 0
+        ) {
+
+            fallingSparks.splice(
+                i,
+                1
+            );
+
+        }
+
+    }
+
+
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* =====================================================
+   ANIMATION LOOP
+===================================================== */
+
+function animate() {
+
+    requestAnimationFrame(
+        animate
+    );
+
+
+    /*
+       Fade previous frame.
+    */
+
+    ctx.fillStyle =
+        "rgba(0,3,10,.18)";
+
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    updateFirework();
+
+    updateParticles();
+
+    updateFallingSparks();
+
+}
+
+
+animate();
+
+
+/* =====================================================
+   FULLSCREEN
+===================================================== */
+
+fullscreenButton.addEventListener(
+    "click",
+    async function() {
+
+        try {
+
+            if (
+                !document.fullscreenElement
+            ) {
+
+                await document
+                    .documentElement
+                    .requestFullscreen();
+
+            }
+
+            else {
+
+                await document
+                    .exitFullscreen();
+
+            }
+
+        }
+
+        catch(error) {
+
+            console.error(error);
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   CLEANUP
+===================================================== */
+
+window.addEventListener(
+    "beforeunload",
+    function() {
+
+        if (
+            video.srcObject
+        ) {
+
+            video.srcObject
+                .getTracks()
+                .forEach(
+                    track =>
+                        track.stop()
+                );
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>
